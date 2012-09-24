@@ -1,44 +1,39 @@
 /*
  * gonn - Super simple neural network in go
  *
- * 
- *
- *
- * TODO: x = x + y -> x += y all over the place
- *
  */
 
 package main
 
 import (
+    "fmt"
     "math"
     "math/rand"
     "time"
-    "fmt"
 )
 
 type NN struct {
     // Number of input, hidden, and output nodes.
-    ni int
-    nh int
-    no int
+    ni  int
+    nh  int
+    no  int
 
     // Activations for nodes.
-    ai []float64
-    ah []float64
-    ao []float64
+    ai  []float64
+    ah  []float64
+    ao  []float64
 
     // Weights.
-    wi [][]float64
-    wo [][]float64
+    wi  [][]float64
+    wo  [][]float64
 
     // Last change in weights for momentum. FIXME: ??
-    ci [][]float64
-    co [][]float64
+    ci  [][]float64
+    co  [][]float64
 }
 
 //FIXME: For debug only:
-func (net *NN) pprint() {
+func (net *NN) Pprint() {
     fmt.Println("ni:", net.ni)
     fmt.Println("nh:", net.nh)
     fmt.Println("no:", net.no)
@@ -55,7 +50,7 @@ func (net *NN) pprint() {
 }
 
 type TrainingDataElement struct {
-    input []float64
+    input  []float64
     output []float64
 }
 
@@ -115,7 +110,7 @@ func (net *NN) Test(data []DataElement) [][]float64 {
 
 func (net *NN) update(input []float64) []float64 {
     // Input activations.
-    for i := 0; i < net.ni - 1; i++ { //TODO What is bias mode?
+    for i := 0; i < net.ni-1; i++ { //TODO What is bias mode?
         net.ai[i] = input[i]
     }
 
@@ -123,7 +118,7 @@ func (net *NN) update(input []float64) []float64 {
     for i := 0; i < net.nh; i++ {
         sum := 0.0
         for j := 0; j < net.ni; j++ {
-            sum = sum + net.ai[j] * net.wi[j][i]
+            sum = sum + net.ai[j]*net.wi[j][i]
         }
         net.ah[i] = sigmoid(sum)
     }
@@ -132,12 +127,14 @@ func (net *NN) update(input []float64) []float64 {
     for i := 0; i < net.no; i++ {
         sum := 0.0
         for j := 0; j < net.nh; j++ {
-            sum = sum + net.ah[j] * net.wo[j][i]
+            sum = sum + net.ah[j]*net.wo[j][i]
         }
         net.ao[i] = sigmoid(sum)
     }
 
-    return net.ao
+    output := make([]float64, len(net.ao))
+    copy(output, net.ao)
+    return output
 }
 
 func (net *NN) backPropagate(output []float64, R, M float64) float64 {
@@ -153,7 +150,7 @@ func (net *NN) backPropagate(output []float64, R, M float64) float64 {
     for i := 0; i < net.nh; i++ {
         err := 0.0
         for j := 0; j < net.no; j++ {
-            err = err + output_deltas[j] * net.wo[i][j]
+            err = err + output_deltas[j]*net.wo[i][j]
         }
         hidden_deltas[i] = dsigmoid(net.ah[i]) * err
     }
@@ -162,7 +159,7 @@ func (net *NN) backPropagate(output []float64, R, M float64) float64 {
     for i := 0; i < net.nh; i++ {
         for j := 0; j < net.no; j++ {
             change := output_deltas[j] * net.ah[i]
-            net.wo[i][j] = net.wo[i][j] + R * change + M * net.co[i][j]
+            net.wo[i][j] = net.wo[i][j] + R*change + M*net.co[i][j]
             net.co[i][j] = change
         }
     }
@@ -171,7 +168,7 @@ func (net *NN) backPropagate(output []float64, R, M float64) float64 {
     for i := 0; i < net.ni; i++ {
         for j := 0; j < net.nh; j++ {
             change := hidden_deltas[j] * net.ai[i]
-            net.wi[i][j] = net.wi[i][j] + R * change + M * net.ci[i][j]
+            net.wi[i][j] = net.wi[i][j] + R*change + M*net.ci[i][j]
             net.ci[i][j] = change
         }
     }
@@ -179,7 +176,7 @@ func (net *NN) backPropagate(output []float64, R, M float64) float64 {
     // Calculate error.
     err := 0.0
     for i := 0; i < len(output); i++ {
-        err += 0.5 * math.Pow((output[i] - net.ao[i]), 2)
+        err += 0.5 * math.Pow((output[i]-net.ao[i]), 2)
     }
     return err
 }
@@ -203,7 +200,7 @@ func makeSlice(size int, fill float64) []float64 {
 
 func makeMatrix(x, y int, fill float64) [][]float64 {
     matrix := make([][]float64, x)
-    for i:= range matrix {
+    for i := range matrix {
         matrix[i] = makeSlice(y, fill)
     }
     return matrix
@@ -211,5 +208,5 @@ func makeMatrix(x, y int, fill float64) [][]float64 {
 
 func randInRange(lower, upper float64) float64 {
     rand.Seed(time.Now().UnixNano())
-    return (rand.Float64() * (math.Abs(lower) + upper) - math.Abs(lower))
+    return (rand.Float64()*(math.Abs(lower)+upper) - math.Abs(lower))
 }

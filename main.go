@@ -28,6 +28,7 @@ func main() {
     network := Create(2, 2, 1)
 
     network.Train(trainingdata, 1000, 0.5, 0.1)
+
     result := network.Test(testdata)
 
     fmt.Println(result)
